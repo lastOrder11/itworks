@@ -110,13 +110,13 @@ const Contact = () => {
           transition={{ duration: 0.5, type: "tween" }}
           className='xl:flex-1 xl:h-auto md:h-[550px] h-[350px] flex items-center justify-center'
         >
-          <motion.div
+          {/* <motion.div
             className="text-[200px]"
             animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
             🔮
-          </motion.div>
+          </motion.div> */}
         </motion.div>
       </div>
     </section>

@@ -5,13 +5,27 @@ import * as random from "maath/random/dist/maath-random.esm";
 
 const Stars = (props) => {
   const ref = useRef();
-  // On génère 5000 étoiles aléatoires
-  const [sphere] = useState(() => random.inSphere(new Float32Array(5000), { radius: 1.2 }));
+
+  // 1. On génère 6000 valeurs (car 6000 est divisible par 3 coordonnées X,Y,Z !)
+  const [sphere] = useState(() => {
+    const positions = new Float32Array(2100);
+    random.inSphere(positions, { radius: 1.2 });
+    
+    // 2. SÉCURITÉ ANTI-CRASH : On vérifie qu'aucune valeur n'est "NaN"
+    for (let i = 0; i < positions.length; i++) {
+      if (isNaN(positions[i])) {
+        positions[i] = 0; // Si une erreur survient, on force à 0 pour éviter le plantage
+      }
+    }
+    return positions;
+  });
 
   // Animation de rotation lente des étoiles
   useFrame((state, delta) => {
-    ref.current.rotation.x -= delta / 10;
-    ref.current.rotation.y -= delta / 15;
+    if (ref.current) {
+      ref.current.rotation.x -= delta / 10;
+      ref.current.rotation.y -= delta / 15;
+    }
   });
 
   return (

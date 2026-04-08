@@ -33,7 +33,7 @@ const App = () => {
         <Footer /> {/* <-- NOUVEAU: Le Footer vient clôturer le site */}
       </div>
 
-      <CustomCursor />
+      {/* <CustomCursor /> */}
     </BrowserRouter>
   );
 }
