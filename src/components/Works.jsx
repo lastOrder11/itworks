@@ -130,7 +130,7 @@ const ProjectRow = ({ index, name, description, tags, video, github, liveLinks }
         {/* On a ajouté 'controls' et remplacé 'object-cover' par 'object-contain' */}
         <video
           src={video}
-          autoPlay
+          preload="metadata"
           muted
           loop
           playsInline
