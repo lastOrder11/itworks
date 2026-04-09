@@ -8,7 +8,7 @@ import Hobby from "./components/Hobby";
 import Contact from "./components/Contact";
 import StarsCanvas from "./components/canvas/Stars";
 import CustomCursor from "./components/CustomCursor";
-import Footer from "./components/Footer"; // <-- NOUVEAU
+import Footer from "./components/Footer";
 
 const App = () => {
   return (
@@ -23,17 +23,19 @@ const App = () => {
         <About />
         <Tech />
         <Works />
-        <Hobby />
         
+        {/* 🔥 LA CORRECTION EST ICI 🔥 */}
+        {/* On met Hobby et Contact dans le MÊME bloc, avec UN SEUL fond étoilé */}
         <div className="relative z-0">
+          <Hobby />
           <Contact />
-          <StarsCanvas />
+          <StarsCanvas /> {/* Il va s'étendre en fond sur les deux sections ! */}
         </div>
 
-        <Footer /> {/* <-- NOUVEAU: Le Footer vient clôturer le site */}
+        <Footer />
       </div>
 
-      {/* <CustomCursor /> */}
+      
     </BrowserRouter>
   );
 }

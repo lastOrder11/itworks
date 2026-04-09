@@ -83,7 +83,7 @@ const Hobby = () => {
   return (
     <section id="hobby" className="sm:px-16 px-6 sm:py-16 py-10 max-w-7xl mx-auto relative z-0 mt-20 border-t border-[#1e293b]">
       {/* Spectacle d'étoiles en fond */}
-      <StarsCanvas />
+      {/* <StarsCanvas /> */}
 
       <motion.div
         initial={{ opacity: 0 }}

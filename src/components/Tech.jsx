@@ -1,8 +1,9 @@
-import React from "react";
-import BallCanvas from "./canvas/Ball";
+import React, { Suspense, useRef, useEffect, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { Preload } from "@react-three/drei";
 import { motion } from "framer-motion";
+import { BallMesh } from "./canvas/Ball";
 
-// ✅ NOUVEAU : Import de ton logo PostgreSQL
 import azure from "../assets/tech/azure.png";
 import databricks from "../assets/tech/databricks.png";
 import docker from "../assets/tech/docker.png";
@@ -11,13 +12,12 @@ import git from "../assets/tech/git.png";
 import huggingface from "../assets/tech/huggingface.png";
 import langchain from "../assets/tech/langchain.png";
 import python from "../assets/tech/python.png";
-import postgresqlIcon from "../assets/tech/postgresql.png"; // <-- Remplace par ton chemin exact
+import postgresqlIcon from "../assets/tech/postgresql.png";
 
-// Tes 9 technologies
 const technologies = [
   { name: "Azure Cloud", icon: azure },
   { name: "Databricks", icon: databricks },
-  { name: "PostgreSQL", icon: postgresqlIcon }, // ✅ NOUVEAU
+  { name: "PostgreSQL", icon: postgresqlIcon },
   { name: "Docker Stack", icon: docker },
   { name: "FastAPI Stack", icon: fastapi },
   { name: "GitHub Actions", icon: git },
@@ -26,9 +26,88 @@ const technologies = [
   { name: "Python ML Stack", icon: python },
 ];
 
+// ─────────────────────────────────────────────────────────
+// Calcule la position 3D pour une grille 3x3
+// Les 9 balls sont espacées en world space dans UN seul canvas
+// ─────────────────────────────────────────────────────────
+const getGridPosition = (index) => {
+  const col = index % 3;          // 0, 1, 2
+  const row = Math.floor(index / 3); // 0, 1, 2
+  const spacingX = 3.6;
+  const spacingY = 3.6;
+  const x = (col - 1) * spacingX;  // -3.6, 0, 3.6
+  const y = (1 - row) * spacingY;  // 3.6, 0, -3.6
+  return [x, y, 0];
+};
+
+// ─────────────────────────────────────────────────────────
+// Canvas unique avec toutes les balls — 1 contexte WebGL au lieu de 9
+// Visibility-based : le canvas se pause quand il quitte le viewport
+// ─────────────────────────────────────────────────────────
+const TechCanvas = () => {
+  const containerRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+        if (entry.isIntersecting && !hasLoaded) {
+          setHasLoaded(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [hasLoaded]);
+
+  return (
+    <div
+      ref={containerRef}
+      // Hauteur fixe pour le canvas unique : assez grand pour voir les 3 rangées
+      className="w-full max-w-4xl mx-auto"
+      style={{ height: "520px" }}
+    >
+      {hasLoaded && (
+        <Canvas
+          // 'always' car on gère la pause via hasLoaded/isVisible
+          // Le canvas est simplement retiré du DOM quand invisible (via hasLoaded)
+          frameloop={isVisible ? 'always' : 'demand'}
+          dpr={[1, 1.5]}
+          camera={{ position: [0, 0, 11], fov: 65 }}
+          gl={{
+            antialias: false,          // Moins lourd sur le GPU
+            preserveDrawingBuffer: false, // Inutile ici, économise de la VRAM
+          }}
+        >
+          <Suspense fallback={null}>
+            {technologies.map((tech, index) => (
+              <BallMesh
+                key={tech.name}
+                imgUrl={tech.icon}
+                position={getGridPosition(index)}
+              />
+            ))}
+          </Suspense>
+          <Preload all />
+        </Canvas>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────
+// Section Tech
+// ─────────────────────────────────────────────────────────
 const Tech = () => {
   return (
-    <section id="tech" className="sm:px-16 px-6 sm:py-16 py-10 max-w-7xl mx-auto relative z-0 mt-20 border-t border-[#1e293b]">
+    <section
+      id="tech"
+      className="sm:px-16 px-6 sm:py-16 py-10 max-w-7xl mx-auto relative z-0 mt-20 border-t border-[#1e293b]"
+    >
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -49,19 +128,26 @@ const Tech = () => {
           transition={{ duration: 1, delay: 0.2 }}
           className="mt-3 text-secondary text-[17px] max-w-3xl leading-[30px]"
         >
-          De la conception de modèles IA au déploiement Cloud, voici les outils que je maîtrise pour construire des pipelines de production robustes et scalables.
+          De la conception de modèles IA au déploiement Cloud, voici les outils que je maîtrise
+          pour construire des pipelines de production robustes et scalables.
         </motion.p>
       </div>
 
-      {/* ✅ NOUVEAU : Utilisation de Grid pour forcer une matrice 3x3 */}
-      {/* On utilise max-w-4xl pour resserrer un peu la grille au centre */}
-      <div className="mt-20 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-12 justify-items-center max-w-4xl mx-auto">
-        {technologies.map((technology) => (
-          // On augmente un peu la taille des containers pour des boules plus imposantes
-          <div className="w-36 h-36" key={technology.name} title={technology.name}>
-            <BallCanvas icon={technology.icon} />
-          </div>
-        ))}
+      {/* Labels des technos en dessous du canvas */}
+      <div className="mt-8">
+        <TechCanvas />
+
+        {/* Noms des technos : une grille de labels lisible */}
+        <div className="mt-6 grid grid-cols-3 gap-4 max-w-4xl mx-auto">
+          {technologies.map((tech) => (
+            <p
+              key={tech.name}
+              className="text-secondary text-center text-[13px] font-medium truncate"
+            >
+              {tech.name}
+            </p>
+          ))}
+        </div>
       </div>
     </section>
   );

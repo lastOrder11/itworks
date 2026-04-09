@@ -1,48 +1,68 @@
-import React, { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Preload, useGLTF } from '@react-three/drei';
+import React, { Suspense, useRef, useEffect, useState } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Preload, useGLTF } from '@react-three/drei';
 
 const Blackhole = () => {
-  // On charge ton fichier .glb qui est dans le dossier public
   const blackhole = useGLTF('/blackhole.glb');
+  const meshRef = useRef();
+
+  // Rotation manuelle via useFrame — pas besoin d'OrbitControls ni d'autoRotate
+  useFrame((_, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 0.4; // Vitesse de rotation
+    }
+  });
 
   return (
-    <mesh>
-      {/* Les lumières : un trou noir absorbe la lumière, mais son disque d'accrétion brille ! */}
+    <mesh ref={meshRef}>
       <ambientLight intensity={1.5} />
       <directionalLight position={[10, 10, 5]} intensity={2} />
-      
-      {/* L'objet 3D en lui-même */}
-      <primitive 
+      <primitive
         object={blackhole.scene}
-        scale={2.5} // <-- Si ton trou noir est trop petit ou trop gros, change ce chiffre (ex: 1.5, 3.0...)
-        position={[0, -1.5, 0]} // Position (X, Y, Z)
-        rotation={[0.1, 2, 0.1]}
+        scale={2.5}
+        position={[0, -1.5, 0]}
+        rotation={[0.1, 0, 0.1]}
       />
     </mesh>
   );
 };
 
 const BlackholeCanvas = () => {
+  const containerRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+        if (entry.isIntersecting && !hasLoaded) setHasLoaded(true);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [hasLoaded]);
+
   return (
-    <Canvas
-      shadows
-      camera={{ position: [20, 3, 5], fov: 25 }} // Position de la caméra
-      gl={{ preserveDrawingBuffer: true }}
-    >
-      {/* Suspense permet d'attendre que le modèle charge sans faire crasher le site */}
-      <Suspense fallback={null}>
-        <OrbitControls 
-          enableZoom={false} // On empêche le scroll de zoomer sur le trou noir
-          maxPolarAngle={Math.PI / 2}
-          minPolarAngle={Math.PI / 2}
-          autoRotate={true} // Ça le fait tourner tout seul !
-          autoRotateSpeed={1.5} // Vitesse de rotation
-        />
-        <Blackhole />
-      </Suspense>
-      <Preload all />
-    </Canvas>
+    // Ce div prend tout l'espace de la section Hero
+    <div ref={containerRef} className="absolute inset-0 w-full h-full">
+      {hasLoaded && (
+        <Canvas
+          shadows
+          // 'always' quand visible, 'demand' quand la Hero sort du viewport
+          frameloop={isVisible ? 'always' : 'demand'}
+          camera={{ position: [20, 3, 5], fov: 25 }}
+          gl={{ preserveDrawingBuffer: false, antialias: false }}
+        >
+          <Suspense fallback={null}>
+            <Blackhole />
+          </Suspense>
+          <Preload all />
+        </Canvas>
+      )}
+    </div>
   );
 };
 
